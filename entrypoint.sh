@@ -1,11 +1,15 @@
 #!/bin/bash
 
-# Wait for postgres
+# Wait for PostgreSQL
 echo "Waiting for PostgreSQL..."
 max_attempts=30
 counter=0
 
-until pg_isready -h db -p 5432 -U $POSTGRES_USER || [ $counter -eq $max_attempts ]; do
+DB_HOST=${PGHOST}
+DB_PORT=${PGPORT:-5432}
+DB_USER=${PGUSER}
+
+until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER || [ $counter -eq $max_attempts ]; do
   echo "Waiting for PostgreSQL ($((counter + 1))/$max_attempts)..."
   counter=$((counter + 1))
   sleep 2
@@ -28,4 +32,4 @@ python manage.py collectstatic --noinput
 
 # Start server
 echo "Starting server..."
-gunicorn config.wsgi:application --bind 0.0.0.0:8000
+gunicorn config.wsgi:application --bind 0.0.0.0:${PORT}
