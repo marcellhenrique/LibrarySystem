@@ -35,7 +35,20 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-5txmkz=q#gr%#gocg=^1m
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = int(os.environ.get('DEBUG', '1'))
 
+# Railway deployment detection
+RAILWAY_ENVIRONMENT = os.environ.get('RAILWAY_ENVIRONMENT_NAME')
+if RAILWAY_ENVIRONMENT:
+    DEBUG = False
+
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+# Add Railway domains to allowed hosts
+if RAILWAY_ENVIRONMENT:
+    RAILWAY_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+    if RAILWAY_DOMAIN:
+        ALLOWED_HOSTS.append(RAILWAY_DOMAIN)
+    # Allow Railway internal domains
+    ALLOWED_HOSTS.extend(['*.railway.app', '*.up.railway.app'])
 
 
 # Application definition
@@ -62,13 +75,14 @@ AUTH_USER_MODEL = 'accounts.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # For static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS middleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # CORS middleware
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -96,7 +110,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL')
+        default=os.environ.get('DATABASE_URL', 'sqlite:///db.sqlite3'),
+        conn_max_age=600,
+        conn_health_checks=True,
     )
 }
 
@@ -136,8 +152,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise configuration for static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -163,11 +182,24 @@ SIMPLE_JWT = {
 }
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = True  # For development only
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True  # For development only
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
+
+# Add Railway domain to CORS if available
+if RAILWAY_ENVIRONMENT:
+    RAILWAY_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+    if RAILWAY_DOMAIN:
+        CORS_ALLOWED_ORIGINS.extend([
+            f"https://{RAILWAY_DOMAIN}",
+            f"http://{RAILWAY_DOMAIN}",
+        ])
 
 # Logging configuration
 LOGGING = {
