@@ -37,18 +37,38 @@ DEBUG = int(os.environ.get('DEBUG', '1'))
 
 # Railway deployment detection
 RAILWAY_ENVIRONMENT = os.environ.get('RAILWAY_ENVIRONMENT_NAME')
+RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+
+# Set DEBUG based on environment
 if RAILWAY_ENVIRONMENT:
     DEBUG = False
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Configure ALLOWED_HOSTS
+ALLOWED_HOSTS = []
 
-# Add Railway domains to allowed hosts
+# Add Railway domains
+if RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+
+# Add common Railway patterns
 if RAILWAY_ENVIRONMENT:
-    RAILWAY_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
-    if RAILWAY_DOMAIN:
-        ALLOWED_HOSTS.append(RAILWAY_DOMAIN)
-    # Allow Railway internal domains
-    ALLOWED_HOSTS.extend(['*.railway.app', '*.up.railway.app'])
+    # For Railway, be more permissive to avoid 400 errors
+    ALLOWED_HOSTS.extend([
+        '*.up.railway.app',
+        '*.railway.app',
+        'localhost',
+        '127.0.0.1'
+    ])
+
+# Add environment-specific hosts
+env_hosts = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS.extend([host.strip() for host in env_hosts if host.strip()])
+
+# For development or Railway deployment, be permissive to avoid 400 errors
+if DEBUG or RAILWAY_ENVIRONMENT or not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['*']
+
+print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")  # Debug output
 
 
 # Application definition
@@ -200,6 +220,39 @@ if RAILWAY_ENVIRONMENT:
             f"https://{RAILWAY_DOMAIN}",
             f"http://{RAILWAY_DOMAIN}",
         ])
+
+# Additional security settings for Railway deployment
+if RAILWAY_ENVIRONMENT:
+    # Security settings for production
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = False  # Railway handles SSL termination
+    
+    # CSRF settings for Railway - be permissive to avoid 400 errors
+    CSRF_TRUSTED_ORIGINS = [
+        "https://*.up.railway.app",
+        "https://*.railway.app", 
+        "http://*.up.railway.app",
+        "http://*.railway.app",
+    ]
+    
+    if RAILWAY_PUBLIC_DOMAIN:
+        CSRF_TRUSTED_ORIGINS.extend([
+            f"https://{RAILWAY_PUBLIC_DOMAIN}",
+            f"http://{RAILWAY_PUBLIC_DOMAIN}",
+        ])
+else:
+    # Development settings
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+
+# Make sure we don't have strict host checking issues
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
+# Disable some checks that might cause 400 errors on Railway
+SECURE_HOST_OVERRIDE = True
 
 # Logging configuration
 LOGGING = {

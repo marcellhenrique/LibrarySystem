@@ -8,6 +8,8 @@ echo "Starting Railway deployment..."
 # Show environment for debugging
 echo "PORT: ${PORT:-'not set'}"
 echo "DATABASE_URL: ${DATABASE_URL:0:50}..." # Show first 50 chars only for security
+echo "RAILWAY_ENVIRONMENT_NAME: ${RAILWAY_ENVIRONMENT_NAME:-'not set'}"
+echo "RAILWAY_PUBLIC_DOMAIN: ${RAILWAY_PUBLIC_DOMAIN:-'not set'}"
 
 # Apply database migrations with retry logic
 echo "Applying database migrations..."

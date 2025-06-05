@@ -19,6 +19,7 @@ from django.urls import path, include
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from api.health import simple_health_check
 
 # Swagger schema configuration
 schema_view = get_schema_view(
@@ -35,6 +36,9 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    # Root health check
+    path('', simple_health_check, name='root_health'),
+    
     # Admin interface
     path('admin/', admin.site.urls),
     

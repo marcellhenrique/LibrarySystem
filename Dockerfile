@@ -23,9 +23,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app/
 COPY entrypoint.sh /app/entrypoint.sh
 COPY railway.sh /app/railway.sh
+COPY railway_test.sh /app/railway_test.sh
 
 # Set execute permission for entrypoint scripts
-RUN chmod +x /app/entrypoint.sh /app/railway.sh
+RUN chmod +x /app/entrypoint.sh /app/railway.sh /app/railway_test.sh
 
 # Create and set user
 RUN useradd -m appuser && chown -R appuser:appuser /app
