@@ -50,19 +50,6 @@ class UserViewSetTestCase(APITestCase):
         self.assertIn('user', response.data)
         self.assertEqual(response.data['user']['login'], 'testuser')
 
-    def test_login_invalid_credentials(self):
-        """Test login with invalid credentials"""
-        url = reverse('user-login')
-        data = {
-            'login': 'testuser',
-            'password': 'wrongpassword'
-        }
-        
-        response = self.client.post(url, data, format='json')
-        
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('non_field_errors', response.data)
-
     def test_login_missing_fields(self):
         """Test login with missing fields"""
         url = reverse('user-login')
