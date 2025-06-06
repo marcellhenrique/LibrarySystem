@@ -1,86 +1,83 @@
-# 📚 Django Library Management System
+# 📚 Library Management System
 
-A comprehensive REST API built with Django Rest Framework for managing a library system. This application allows management of books, members, staff, and loan processes with full history tracking.
+A modern library management system built with Django and React-like frontend. This application provides a user-friendly interface for managing books, members, and loans with real-time updates and comprehensive history tracking.
 
 ![Django](https://img.shields.io/badge/Django-5.2.1-092E20?style=flat&logo=django&logoColor=white)
 ![DRF](https://img.shields.io/badge/DRF-3.16.0-ff1709?style=flat&logo=django&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14-336791?style=flat&logo=postgresql&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=flat&logo=docker&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-38B2AC?style=flat&logo=tailwind-css&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=flat&logo=sqlite&logoColor=white)
 
 ## 🎯 Features
 
-- **Book Management**: Create, read, update, and delete books with category and availability tracking
-- **Member Management**: Comprehensive member registration with CPF, email, and phone validation
-- **Staff Authentication**: JWT-based authentication system for library staff
-- **Loan System**: Complete loan workflow with automatic availability tracking
-- **Return Processing**: Streamlined book return process with history logging
-- **Loan History**: Complete audit trail of all library transactions
-- **API Documentation**: Auto-generated Swagger/OpenAPI documentation
-- **Containerized**: Full Docker support with PostgreSQL database
+### Frontend Features
+- **Modern UI**: Clean and responsive interface built with TailwindCSS
+- **Real-time Updates**: Dynamic content loading without page refreshes
+- **Search & Filters**: Instant search across books, members, and loans
+- **Loan Management**: Easy-to-use interface for loan creation and returns
+- **History Tracking**: Visual history of all library transactions
+- **Form Validation**: Client-side validation with clear error messages
+- **Mobile Responsive**: Optimized for all device sizes
+
+### Backend Features
+- **RESTful API**: Complete API for all library operations
+- **Authentication**: JWT-based authentication system
+- **Data Validation**: Comprehensive server-side validation
+- **History Logging**: Automatic tracking of all transactions
+- **Search Capability**: Advanced search across all entities
+
+## 🖥️ User Interface
+
+### Main Sections
+- **Dashboard**: Overview of library activity
+- **Books Management**: List, add, and manage books
+- **Member Management**: Member registration and management
+- **Active Loans**: Current loan tracking
+- **Loan History**: Complete transaction history
+
+### Key UI Components
+- **Search Bar**: Global search functionality
+- **Status Filters**: Filter loans by status
+- **Modal Forms**: Clean forms for adding books/members
+- **Status Indicators**: Visual indicators for loan status
+- **Responsive Tables**: Mobile-friendly data display
 
 ## 🗄️ Data Models
 
 ### Books
-- `id`: UUID (Primary Key)
+- `id`: UUID
 - `title`: String (Required)
 - `category`: String (Required)
-- `availability`: Boolean (Auto-managed)
+- `availability`: Boolean
 - `created_at`, `updated_at`: Timestamps
 
 ### Members
-- `id`: UUID (Primary Key)
-- `name`: String (Required)
-- `cpf`: 11-digit string (Unique, Required)
-- `phone`: 10-15 digit string (Optional)
-- `email`: Email (Unique, Required)
-- `created_at`, `updated_at`: Timestamps
-
-### Staff Users
-- `id`: UUID (Primary Key)
-- `login`: String (Unique, Required)
-- `email`: Email (Unique, Required)
-- `name`: String (Required)
-- `role`: String (Required)
-- `password`: Hashed password
+- `id`: UUID
+- `name`: String (Min length: 3)
+- `cpf`: String (11 digits)
+- `phone`: String (10-15 digits, Optional)
+- `email`: Email (Unique)
 
 ### Loans
-- `id`: UUID (Primary Key)
-- `book`: Foreign Key to Book
-- `member`: Foreign Key to Member
-- `loan_date`: Date (Auto-set)
-- `return_date`: Date (Set on return)
+- `id`: UUID
+- `book`: Book Reference
+- `member`: Member Reference
+- `loan_date`: Timestamp
+- `return_date`: Timestamp
 - `status`: LOANED | RETURNED
 
 ### Loan History
-- `id`: UUID (Primary Key)
-- `book`: Foreign Key to Book
-- `member`: Foreign Key to Member
-- `action_date`: Date of transaction
-- `created_at`: Timestamp
+- `id`: UUID
+- `book`: Book Reference
+- `member`: Member Reference
+- `action_type`: LOANED | RETURNED
+- `action_date`: Timestamp
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Docker and Docker Compose
+- Python 3.8+
+- Node.js 14+ (for development)
 - Git
-
-### Using Docker (Recommended)
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd LibrarySystem
-   ```
-
-2. **Start the application**
-   ```bash
-   docker-compose up --build
-   ```
-
-3. **Access the application**
-   - API: http://localhost:8000/api/
-   - Admin Panel: http://localhost:8000/admin/
-   - API Documentation: http://localhost:8000/swagger/
 
 ### Local Development Setup
 
@@ -97,9 +94,21 @@ A comprehensive REST API built with Django Rest Framework for managing a library
    pip install -r requirements.txt
    ```
 
-3. **Start PostgreSQL database container**
+3. **Initialize database**
    ```bash
-   docker-compose up db -d
+   python manage.py migrate
+   python manage.py createsuperuser
+   ```
+
+4. **Run the development server**
+   ```bash
+   python manage.py runserver
+   ```
+
+5. **Access the application**
+   - Main Interface: http://localhost:8000
+   - Admin Panel: http://localhost:8000/admin/
+   - API Documentation: http://localhost:8000/swagger/
    ```
 
 4. **Run migrations and start server**
@@ -208,70 +217,68 @@ curl -X PATCH http://localhost:8000/api/loans/<loan_id>/return_book/ \
 - `book`: Filter by book ID
 - `search`: Search by book title or member name
 
-## 🏗️ Project Structure
+## 🎨 Styling
 
-```
-LibrarySystem/
-├── 📁 accounts/           # User and member management
-├── 📁 api/               # Core library API (books, loans, history)
-├── 📁 config/            # Django project settings
-├── 📁 staticfiles/       # Static files
-├── 📄 docker-compose.yml # Docker orchestration
-├── 📄 Dockerfile         # Application container
-├── 📄 requirements.txt   # Python dependencies
-├── 📄 .env.local         # Local development environment
-├── 📄 entrypoint.sh      # Container startup script
-└── 📄 manage.py          # Django management script
-```
+The application uses a combination of TailwindCSS and custom styles:
 
-## ⚙️ Business Rules
+### Core Components
+- `.form-input`: Styled form inputs with visible outlines
+- `.form-label`: Form labels with proper spacing
+- `.btn-primary`: Primary action buttons
+- `.btn-secondary`: Secondary action buttons
+- `.card`: Content card containers
 
-- **Book Loans**: Only available books can be loaned
-- **Availability Management**: Book availability is automatically updated on loan/return
-- **Loan Status**: Automatically managed (LOANED → RETURNED)
-- **History Tracking**: All loan/return actions are logged
-- **Authentication**: All API endpoints require staff authentication
-- **Validation**: Comprehensive validation for CPF, email, and phone formats
+### Animation
+- `.fade-in`: Smooth fade-in animation for dynamic content
 
-## 🔧 Environment Configuration
+## 🔍 Search & Filters
 
-### Docker Environment Variables
-Set in `docker-compose.yml`:
-- `POSTGRES_DB=library_system`
-- `POSTGRES_USER=library_user`
-- `POSTGRES_PASSWORD=library_password`
-- `POSTGRES_HOST=db`
-- `DEBUG=1`
+### Global Search
+- Search across books and members
+- Instant results as you type
+- Highlights matching content
 
-### Local Development Environment
-Set in `.env.local`:
-- `POSTGRES_HOST=localhost` (connects to containerized DB)
-- All other database settings remain the same
+### Loan Filters
+- Filter by status (LOANED/RETURNED)
+- Filter by date range
+- Combine with search terms
 
-## 📊 Features & Capabilities
+## 📱 Responsive Design
 
-### 🔐 Security
-- JWT-based authentication with refresh tokens
-- Password hashing with Django's built-in security
-- CORS configuration for cross-origin requests
+- Mobile-first approach
+- Responsive navigation
+- Adaptive layouts
+- Touch-friendly interfaces
+
+## 🔧 Configuration
+
+### Environment Variables
+- `DEBUG`: Enable/disable debug mode
+- `SECRET_KEY`: Django secret key
+- `DATABASE_URL`: Database connection string
+- `ALLOWED_HOSTS`: Allowed host names
+
+### Development Tools
+- Django Debug Toolbar (in development)
+- Django Extensions
+- DRF Browsable API
+
+## 🔐 Security Features
+
+### Authentication
+- JWT-based token authentication
+- Secure password hashing
+- Role-based access control
+
+### Data Protection
 - Input validation and sanitization
+- CSRF protection
+- XSS prevention
 
-### 📈 Monitoring & Logging
-- Comprehensive logging to file and console
-- Request/response tracking
-- Error handling and reporting
-
-### 🔍 API Documentation
-- Auto-generated Swagger UI at `/swagger/`
-- ReDoc documentation at `/redoc/`
-- OpenAPI 3.0 specification
-
-### 🐳 Docker Features
-- Multi-container setup with PostgreSQL 14
-- Health checks for database connectivity
-- Volume persistence for data
-- Automated migrations and static file collection
-- Production-ready Gunicorn WSGI server
+### API Security
+- Token refresh mechanisms
+- Request rate limiting
+- Secure password handling
 
 ## 🚦 Getting Started Checklist
 
