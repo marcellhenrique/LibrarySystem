@@ -19,16 +19,21 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project and entrypoint
+# Copy project and entrypoint scripts
 COPY . /app/
 COPY entrypoint.sh /app/entrypoint.sh
+COPY railway.sh /app/railway.sh
+COPY railway_test.sh /app/railway_test.sh
 
-# Set execute permission for entrypoint
-RUN chmod +x /app/entrypoint.sh
+# Set execute permission for entrypoint scripts
+RUN chmod +x /app/entrypoint.sh /app/railway.sh /app/railway_test.sh
 
 # Create and set user
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Run application
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Expose port
+EXPOSE 8000
+
+# Run application (Railway will use the Procfile, Docker will use this)
+CMD ["/app/railway.sh"]

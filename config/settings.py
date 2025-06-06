@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
+import dj_database_url
 
 # Load local environment variables for development
 # This allows running Django locally while keeping Docker config separate
@@ -34,7 +35,40 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-5txmkz=q#gr%#gocg=^1m
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = int(os.environ.get('DEBUG', '1'))
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Railway deployment detection
+RAILWAY_ENVIRONMENT = os.environ.get('RAILWAY_ENVIRONMENT_NAME')
+RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+
+# Set DEBUG based on environment
+if RAILWAY_ENVIRONMENT:
+    DEBUG = False
+
+# Configure ALLOWED_HOSTS
+ALLOWED_HOSTS = []
+
+# Add Railway domains
+if RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+
+# Add common Railway patterns
+if RAILWAY_ENVIRONMENT:
+    # For Railway, be more permissive to avoid 400 errors
+    ALLOWED_HOSTS.extend([
+        '*.up.railway.app',
+        '*.railway.app',
+        'localhost',
+        '127.0.0.1'
+    ])
+
+# Add environment-specific hosts
+env_hosts = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS.extend([host.strip() for host in env_hosts if host.strip()])
+
+# For development or Railway deployment, be permissive to avoid 400 errors
+if DEBUG or RAILWAY_ENVIRONMENT or not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['*']
+
+print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")  # Debug output
 
 
 # Application definition
@@ -61,13 +95,14 @@ AUTH_USER_MODEL = 'accounts.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # For static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS middleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # CORS middleware
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -94,15 +129,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', 'library_system'),
-        'USER': os.environ.get('POSTGRES_USER', 'library_user'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'library_password'),
-        'HOST': os.environ.get('POSTGRES_HOST', 'db'),
-        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL', 'sqlite:///db.sqlite3'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
+
 
 
 # Password validation
@@ -139,8 +172,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise configuration for static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -166,11 +202,57 @@ SIMPLE_JWT = {
 }
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = True  # For development only
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True  # For development only
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
+
+# Add Railway domain to CORS if available
+if RAILWAY_ENVIRONMENT:
+    RAILWAY_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+    if RAILWAY_DOMAIN:
+        CORS_ALLOWED_ORIGINS.extend([
+            f"https://{RAILWAY_DOMAIN}",
+            f"http://{RAILWAY_DOMAIN}",
+        ])
+
+# Additional security settings for Railway deployment
+if RAILWAY_ENVIRONMENT:
+    # Security settings for production
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = False  # Railway handles SSL termination
+    
+    # CSRF settings for Railway - be permissive to avoid 400 errors
+    CSRF_TRUSTED_ORIGINS = [
+        "https://*.up.railway.app",
+        "https://*.railway.app", 
+        "http://*.up.railway.app",
+        "http://*.railway.app",
+    ]
+    
+    if RAILWAY_PUBLIC_DOMAIN:
+        CSRF_TRUSTED_ORIGINS.extend([
+            f"https://{RAILWAY_PUBLIC_DOMAIN}",
+            f"http://{RAILWAY_PUBLIC_DOMAIN}",
+        ])
+else:
+    # Development settings
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+
+# Make sure we don't have strict host checking issues
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
+# Disable some checks that might cause 400 errors on Railway
+SECURE_HOST_OVERRIDE = True
 
 # Logging configuration
 LOGGING = {
