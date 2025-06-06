@@ -71,10 +71,14 @@ class LoginSerializer(serializers.Serializer):
         if not login or not password:
             raise serializers.ValidationError('Both login and password are required.')
 
-        user = authenticate(login=login, password=password)
+        # Use username=login for authentication
+        user = authenticate(username=login, password=password)
 
-        if not user or not user.is_active:
+        if not user:
             raise serializers.ValidationError('Invalid credentials.')
+            
+        if not user.is_active:
+            raise serializers.ValidationError('User account is not active.')
 
         if not user.is_staff_member:
             raise serializers.ValidationError('User is not a staff member.')

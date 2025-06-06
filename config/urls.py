@@ -36,8 +36,8 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    # Root health check
-    path('', simple_health_check, name='root_health'),
+    # Frontend URLs
+    path('', include('frontend.urls')),
     
     # Admin interface
     path('admin/', admin.site.urls),
@@ -50,4 +50,7 @@ urlpatterns = [
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    
+    # Health check
+    path('health/', simple_health_check, name='health'),
 ]

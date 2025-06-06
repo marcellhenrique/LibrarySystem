@@ -101,7 +101,7 @@ class LoanHistorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LoanHistory
-        fields = ('id', 'book', 'member', 'action_date', 
+        fields = ('id', 'book', 'member', 'action_date', 'action_type',
                  'book_details', 'member_details', 'created_at')
         read_only_fields = ('id', 'created_at')
 

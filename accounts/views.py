@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db import models
+from django.conf import settings
 from .models import User, Member
 from .serializers import UserSerializer, LoginSerializer, MemberSerializer
 
@@ -42,13 +43,32 @@ class UserViewSet(viewsets.ModelViewSet):
             user = serializer.validated_data['user']
             refresh = RefreshToken.for_user(user)
             
-            return Response({
+            response_data = {
                 'access': str(refresh.access_token),
                 'refresh': str(refresh),
                 'user': UserSerializer(user).data
-            })
+            }
+            
+            # Include error information in debug mode
+            if settings.DEBUG:
+                response_data['debug_info'] = {
+                    'login_field': request.data.get('login'),
+                    'is_authenticated': user.is_authenticated,
+                    'is_active': user.is_active,
+                    'is_staff_member': user.is_staff_member,
+                }
+            
+            return Response(response_data)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Include more detailed error information
+        error_detail = serializer.errors
+        if 'non_field_errors' in error_detail:
+            error_detail = error_detail['non_field_errors'][0]
+            
+        return Response(
+            {'detail': str(error_detail)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     @action(detail=False)
     def profile(self, request):

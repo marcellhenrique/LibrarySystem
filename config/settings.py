@@ -88,10 +88,20 @@ INSTALLED_APPS = [
     # Local apps
     'accounts',
     'api',
+    'frontend',
 ]
+
+# Tailwind configuration
+TAILWIND_APP_NAME = 'theme'
 
 # Custom user model
 AUTH_USER_MODEL = 'accounts.User'
+
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.LoginBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

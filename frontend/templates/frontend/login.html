@@ -1,0 +1,84 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Login - Library System{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <div class="bg-white p-8 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Login</h1>
+
+        <!-- Success message after registration -->
+        <div id="success-message" class="hidden mb-4 p-4 bg-green-100 text-green-700 rounded">
+            Registration successful! Please login with your new account.
+        </div>
+        
+        <form id="login-form" class="space-y-6">
+            <div>
+                <label for="login" class="form-label">Username</label>
+                <input type="text" id="login" name="login" required class="form-input">
+            </div>
+
+            <div>
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" required class="form-input">
+            </div>
+
+            <div>
+                <button type="submit" class="w-full btn-primary">
+                    Sign in
+                </button>
+            </div>
+
+            <div class="text-center">
+                <p class="text-sm text-gray-600">
+                    Don't have an account? 
+                    <a href="{% url 'frontend:register' %}" class="text-blue-600 hover:text-blue-500">
+                        Register here
+                    </a>
+                </p>
+            </div>
+
+            <div id="error-message" class="hidden text-red-500 text-sm"></div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        ui.hideError();
+        const loginData = {
+            login: document.getElementById('login').value,
+            password: document.getElementById('password').value
+        };
+
+        try {
+            const response = await fetch('/api/accounts/users/login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(loginData)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                auth.setToken(data.access);
+                window.location.href = '{% url "frontend:home" %}';
+            } else {
+                ui.showError(data.detail || 'Invalid credentials');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            ui.showError('An error occurred. Please try again.');
+        }
+    });
+
+    // Clear any stored token when accessing login page
+    auth.removeToken();
+</script>
+{% endblock %}

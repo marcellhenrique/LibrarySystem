@@ -86,6 +86,7 @@ class Loan(models.Model):
         LoanHistory.objects.create(
             book=self.book,
             member=self.member,
+            action_type=self.status,
             action_date=self.return_date if self.status == 'RETURNED' else self.loan_date
         )
 
@@ -95,6 +96,11 @@ class Loan(models.Model):
 
 class LoanHistory(models.Model):
     """Model for loan history tracking"""
+    ACTION_CHOICES = [
+        ('LOANED', 'Loaned'),
+        ('RETURNED', 'Returned'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     book = models.ForeignKey(
         Book,
@@ -105,6 +111,11 @@ class LoanHistory(models.Model):
         Member,
         on_delete=models.PROTECT,
         related_name='history'
+    )
+    action_type = models.CharField(
+        max_length=10,
+        choices=ACTION_CHOICES,
+        default='LOANED'
     )
     action_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)

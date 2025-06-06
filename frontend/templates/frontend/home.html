@@ -1,0 +1,624 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}Home - Library System{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-gray-800 mb-8">Welcome to Library System</h1>
+    
+    <!-- Search Section -->
+    <div class="mb-8">
+        <div class="card">
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="handleSearch()" class="btn-primary">
+                        Search
+                    </button>
+                    <button onclick="clearSearch()" class="btn-secondary">
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search Section -->
+    <div class="mb-8">
+        <div class="grid md:grid-cols-3 gap-4">
+            <div class="flex-1">
+                <label class="form-label">Book/Member Search</label>
+                <input type="text" 
+                       id="search-input" 
+                       placeholder="Search books or members..."
+                       class="form-input w-full">
+            </div>
+            <div class="flex-1">
+                <label class="form-label">Status Filter</label>
+                <select id="status-filter" class="form-input w-full">
+                    <option value="">All Loans</option>
+                    <option value="LOANED">Currently Loaned</option>
+                    <option value="RETURNED">Returned</option>
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button onclick="handleSearch()" class="btn-primary flex-1">
+                    Search
+                </button>
+                <button onclick="clearSearch()" class="btn-secondary flex-1">
+                    Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid md:grid-cols-2 gap-8">
+        <!-- Left Column -->
+        <div class="space-y-8">
+            <!-- Books Section -->
+            <div id="books-section" class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-700">Books</h2>
+                    <button onclick="showAddBookModal()" class="btn-primary">
+                        Add Book
+                    </button>
+                </div>
+                <div id="books-list" class="space-y-4 max-h-96 overflow-y-auto">
+                    <!-- Books will be loaded here via JavaScript -->
+                    <p class="text-gray-500">Loading books...</p>
+                </div>
+            </div>
+
+            <!-- Members Section -->
+            <div id="members-section" class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-700">Members</h2>
+                    <button onclick="showAddMemberModal()" class="btn-primary">
+                        Add Member
+                    </button>
+                </div>
+                <div id="members-list" class="space-y-4 max-h-96 overflow-y-auto">
+                    <!-- Members will be loaded here via JavaScript -->
+                    <p class="text-gray-500">Loading members...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="space-y-8">
+            <!-- Active Loans Section -->
+            <div id="loans-section" class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-700">Active Loans</h2>
+                    <button onclick="showAddLoanModal()" class="btn-primary">
+                        New Loan
+                    </button>
+                </div>
+                <div id="loans-list" class="space-y-4 max-h-96 overflow-y-auto">
+                    <!-- Loans will be loaded here via JavaScript -->
+                    <p class="text-gray-500">Loading loans...</p>
+                </div>
+            </div>
+
+            <!-- Loan History Section -->
+            <div id="history-section" class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-700">Loan History</h2>
+                </div>
+                <div id="history-list" class="space-y-4 max-h-96 overflow-y-auto">
+                    <!-- History will be loaded here via JavaScript -->
+                    <p class="text-gray-500">Loading history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="error-message" class="hidden mt-4 p-4 bg-red-100 text-red-700 rounded"></div>
+</div>
+
+<!-- Add Book Modal -->
+<div id="add-book-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Add New Book</h3>
+        <form id="add-book-form" class="space-y-4">
+            <div>
+                <label class="form-label">Title</label>
+                <input type="text" name="title" required class="form-input">
+            </div>
+            <div>
+                <label class="form-label">Category</label>
+                <input type="text" name="category" required class="form-input" 
+                       placeholder="Fiction, Non-fiction, Science, etc.">
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeAddBookModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Add Book</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Member Modal -->
+<div id="add-member-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Add New Member</h3>
+        <form id="add-member-form" class="space-y-4">
+            <div>
+                <label class="form-label">Name</label>
+                <input type="text" 
+                       name="name" 
+                       required 
+                       class="form-input" 
+                       pattern=".{3,255}"
+                       title="Name must be at least 3 characters long">
+                <p class="text-gray-500 text-sm mt-1">Required, minimum 3 characters</p>
+            </div>
+            <div>
+                <label class="form-label">Email</label>
+                <input type="email" 
+                       name="email" 
+                       required 
+                       class="form-input"
+                       title="Please enter a valid email address">
+                <p class="text-gray-500 text-sm mt-1">Must be unique</p>
+            </div>
+            <div>
+                <label class="form-label">CPF</label>
+                <input type="text" 
+                       name="cpf" 
+                       required 
+                       class="form-input" 
+                       pattern="\d{11}"
+                       title="CPF must contain exactly 11 numeric digits"
+                       maxlength="11">
+                <p class="text-gray-500 text-sm mt-1">Must contain exactly 11 digits, numbers only</p>
+            </div>
+            <div>
+                <label class="form-label">Phone</label>
+                <input type="tel" 
+                       name="phone" 
+                       class="form-input"
+                       pattern="\d{10,15}"
+                       title="Phone must contain between 10 and 15 digits"
+                       maxlength="15">
+                <p class="text-gray-500 text-sm mt-1">Optional, 10-15 digits, numbers only</p>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeAddMemberModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Add Member</button>
+            </div>
+            <!-- Form validation errors will be shown here -->
+            <div id="member-form-errors" class="mt-4 text-red-600 text-sm"></div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Loan Modal -->
+<div id="add-loan-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Create New Loan</h3>
+        <form id="add-loan-form" class="space-y-4">
+            <div>
+                <label class="form-label">Book</label>
+                <select name="book" required class="form-input">
+                    <option value="">Select a book...</option>
+                    <!-- Available books will be loaded here -->
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Member</label>
+                <select name="member" required class="form-input">
+                    <option value="">Select a member...</option>
+                    <!-- Members will be loaded here -->
+                </select>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeAddLoanModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Create Loan</button>
+            </div>
+            <!-- Form validation errors will be shown here -->
+            <div id="loan-form-errors" class="mt-4 text-red-600 text-sm"></div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Check authentication
+    if (!auth.isAuthenticated()) {
+        window.location.href = "{% url 'frontend:login' %}";
+    }
+
+    // Data fetching functions
+    async function fetchBooks(search = '') {
+        try {
+            ui.showLoading('books-list');
+            const url = `/api/books/${search ? `?search=${search}` : ''}`;
+            const data = await api.get(url);
+            
+            const booksList = document.getElementById('books-list');
+            if (data.results && data.results.length > 0) {
+                booksList.innerHTML = data.results.map(book => `
+                    <div class="border-b pb-4 fade-in">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-lg font-semibold">${book.title}</h3>
+                                <p class="text-gray-600">Category: ${book.category}</p>
+                                <p class="text-gray-600">Status: 
+                                    <span class="${book.availability ? 'text-green-600' : 'text-red-600'}">
+                                        ${book.availability ? 'Available' : 'Checked Out'}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="handleBookAction('${book.id}', ${book.is_available})"
+                                        class="btn-primary text-sm">
+                                    ${book.is_available ? 'Check Out' : 'Return'}
+                                </button>
+                                <button onclick="deleteBook('${book.id}')"
+                                        class="btn-secondary text-sm">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                booksList.innerHTML = '<p class="text-gray-500">No books available.</p>';
+            }
+        } catch (error) {
+            ui.showError('Error loading books. Please try again.', 'error-message');
+        }
+    }
+
+    async function fetchMembers(search = '') {
+        try {
+            ui.showLoading('members-list');
+            const url = `/api/accounts/members/${search ? `?search=${search}` : ''}`;
+            const data = await api.get(url);
+            
+            const membersList = document.getElementById('members-list');
+            if (data.results && data.results.length > 0) {
+                membersList.innerHTML = data.results.map(member => `
+                    <div class="border-b pb-4 fade-in">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-lg font-semibold">${member.name}</h3>
+                                <p class="text-gray-600">Email: ${member.email}</p>
+                                <p class="text-gray-600">Phone: ${member.phone || 'N/A'}</p>
+                                <p class="text-gray-600">CPF: ${member.cpf}</p>
+                            </div>
+                            <div>
+                                <button onclick="deleteMember('${member.id}')"
+                                        class="btn-secondary text-sm">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                membersList.innerHTML = '<p class="text-gray-500">No members found.</p>';
+            }
+        } catch (error) {
+            ui.showError('Error loading members. Please try again.', 'error-message');
+        }
+    }
+
+    // Modal functions
+    function showAddBookModal() {
+        document.getElementById('add-book-modal').classList.remove('hidden');
+    }
+
+    function closeAddBookModal() {
+        document.getElementById('add-book-modal').classList.add('hidden');
+    }
+
+    function showAddMemberModal() {
+        document.getElementById('add-member-modal').classList.remove('hidden');
+    }
+
+    function closeAddMemberModal() {
+        document.getElementById('add-member-modal').classList.add('hidden');
+    }
+
+    // Search functions
+    function handleSearch() {
+        const searchTerm = document.getElementById('search-input').value;
+        fetchBooks(searchTerm);
+        fetchMembers(searchTerm);
+    }
+
+    function clearSearch() {
+        document.getElementById('search-input').value = '';
+        fetchBooks();
+        fetchMembers();
+    }
+
+    // Book actions
+    async function handleBookAction(bookId, isAvailable) {
+        try {
+            if (isAvailable) {
+                await api.post(`/api/books/${bookId}/checkout/`);
+            } else {
+                await api.post(`/api/books/${bookId}/return/`);
+            }
+            fetchBooks();
+        } catch (error) {
+            ui.showError('Error updating book status. Please try again.');
+        }
+    }
+
+    async function deleteBook(bookId) {
+        if (confirm('Are you sure you want to delete this book?')) {
+            try {
+                await api.delete(`/api/books/${bookId}/`);
+                fetchBooks();
+            } catch (error) {
+                ui.showError('Error deleting book. Please try again.');
+            }
+        }
+    }
+
+    async function deleteMember(memberId) {
+        if (confirm('Are you sure you want to delete this member?')) {
+            try {
+                await api.delete(`/api/accounts/members/${memberId}/`);
+                fetchMembers();
+            } catch (error) {
+                ui.showError('Error deleting member. Please try again.');
+            }
+        }
+    }
+
+    // Form submissions
+    document.getElementById('add-book-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const bookData = Object.fromEntries(formData.entries());
+        
+        try {
+            await api.post('/api/books/', bookData);
+            closeAddBookModal();
+            e.target.reset();
+            fetchBooks();
+        } catch (error) {
+            ui.showError('Error adding book. Please try again.');
+        }
+    });
+
+    document.getElementById('add-member-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Clear previous errors
+        ui.clearFormErrors('member-form');
+        
+        // Get form data and clean input values
+        const formData = new FormData(e.target);
+        const memberData = Object.fromEntries(formData.entries());
+        
+        // Clean and validate input values
+        memberData.cpf = memberData.cpf.replace(/\D/g, '');
+        if (memberData.phone) {
+            memberData.phone = memberData.phone.replace(/\D/g, '');
+        }
+        memberData.email = memberData.email.toLowerCase().trim();
+        memberData.name = memberData.name.trim();
+        
+        try {
+            await api.post('/api/accounts/members/', memberData);
+            closeAddMemberModal();
+            e.target.reset();
+            fetchMembers();
+            ui.showSuccess('Member added successfully');
+        } catch (error) {
+            if (error.response?.data) {
+                ui.showFormErrors(error.response.data, 'member-form');
+            } else {
+                ui.showError('Error adding member. Please try again.');
+            }
+        }
+    });
+
+    // Load available books for loan form
+    async function loadAvailableBooks() {
+        try {
+            const data = await api.get('/api/books/?availability=true');
+            const select = document.querySelector('#add-loan-form select[name="book"]');
+            select.innerHTML = '<option value="">Select a book...</option>';
+            
+            data.results.forEach(book => {
+                select.innerHTML += `
+                    <option value="${book.id}">${book.title} (${book.category})</option>
+                `;
+            });
+        } catch (error) {
+            ui.showError('Error loading available books');
+        }
+    }
+
+    // Load members for loan form
+    async function loadMembersForLoan() {
+        try {
+            const data = await api.get('/api/accounts/members/');
+            const select = document.querySelector('#add-loan-form select[name="member"]');
+            select.innerHTML = '<option value="">Select a member...</option>';
+            
+            data.results.forEach(member => {
+                select.innerHTML += `
+                    <option value="${member.id}">${member.name} (${member.cpf})</option>
+                `;
+            });
+        } catch (error) {
+            ui.showError('Error loading members');
+        }
+    }
+
+    // Fetch and display active loans
+    async function fetchLoans(search = '', status = '') {
+        try {
+            ui.showLoading('loans-list');
+            let url = '/api/loans/';
+            const params = [];
+            
+            if (search) params.push(`search=${search}`);
+            if (status) params.push(`status=${status}`);
+            if (params.length > 0) url += '?' + params.join('&');
+            
+            const data = await api.get(url);
+            
+            const loansList = document.getElementById('loans-list');
+            if (data.results && data.results.length > 0) {
+                loansList.innerHTML = data.results.map(loan => `
+                    <div class="border-b pb-4 fade-in">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-lg font-semibold">${loan.book_details.title}</h3>
+                                <p class="text-gray-600">Borrowed by: ${loan.member_details.name}</p>
+                                <p class="text-gray-600">Loan Date: ${ui.formatDate(loan.loan_date)}</p>
+                                <p class="text-gray-600">Status: 
+                                    <span class="${loan.status === 'LOANED' ? 'text-yellow-600' : 'text-green-600'}">
+                                        ${loan.status}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="flex space-x-2">
+                                ${loan.status === 'LOANED' ? `
+                                    <button onclick="returnBook('${loan.id}')"
+                                            class="btn-primary text-sm">
+                                        Return Book
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                loansList.innerHTML = '<p class="text-gray-500">No active loans found.</p>';
+            }
+        } catch (error) {
+            ui.showError('Error loading loans. Please try again.');
+        }
+    }
+
+    // Fetch and display loan history
+    async function fetchHistory(search = '') {
+        try {
+            ui.showLoading('history-list');
+            const url = `/api/history/${search ? `?search=${search}` : ''}`;
+            const data = await api.get(url);
+            
+            const historyList = document.getElementById('history-list');
+            if (data.results && data.results.length > 0) {
+                historyList.innerHTML = data.results.map(record => `
+                    <div class="border-b pb-4 fade-in">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-lg font-semibold">${record.book_details.title}</h3>
+                                <p class="text-gray-600">Member: ${record.member_details.name}</p>
+                                <p class="text-gray-600">Action: <span class="${record.action_type === 'LOANED' ? 'text-yellow-600' : 'text-green-600'}">${record.action_type}</span></p>
+                                <p class="text-gray-600">Date: ${ui.formatDate(record.action_date)}</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                historyList.innerHTML = '<p class="text-gray-500">No loan history found.</p>';
+            }
+        } catch (error) {
+            ui.showError('Error loading loan history. Please try again.');
+        }
+    }
+
+    // Modal functions
+    function showAddLoanModal() {
+        document.getElementById('add-loan-modal').classList.remove('hidden');
+        loadAvailableBooks();
+        loadMembersForLoan();
+    }
+
+    function closeAddLoanModal() {
+        document.getElementById('add-loan-modal').classList.add('hidden');
+    }
+
+    // Book return function
+    async function returnBook(loanId) {
+        if (confirm('Are you sure you want to return this book?')) {
+            try {
+                await api.patch(`/api/loans/${loanId}/return_book/`, {});
+                ui.showSuccess('Book returned successfully');
+                
+                // Refresh all related data
+                await Promise.all([
+                    fetchLoans(),
+                    fetchHistory(),
+                    fetchBooks()  // Refresh books list to update availability
+                ]);
+            } catch (error) {
+                console.error('Return book error:', error);
+                ui.showError(error.message || 'Error returning book. Please try again.');
+            }
+        }
+    }
+
+    // Handle loan creation
+    document.getElementById('add-loan-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        ui.clearFormErrors('loan-form');
+        
+        const formData = new FormData(e.target);
+        const loanData = Object.fromEntries(formData.entries());
+        
+        try {
+            await api.post('/api/loans/', loanData);
+            closeAddLoanModal();
+            e.target.reset();
+            fetchLoans();
+            fetchBooks();  // Refresh books list to update availability
+            ui.showSuccess('Loan created successfully');
+        } catch (error) {
+            if (error.response?.data) {
+                ui.showFormErrors(error.response.data, 'loan-form');
+            } else {
+                ui.showError('Error creating loan. Please try again.');
+            }
+        }
+    });
+
+    // Initialize page functionality
+    function initializePage() {
+        // Set up event listeners
+        document.getElementById('search-input').addEventListener('input', handleSearch);
+        document.getElementById('status-filter').addEventListener('change', handleSearch);
+        
+        // Load initial data
+        fetchBooks();
+        fetchMembers();
+        fetchLoans();
+        fetchHistory();
+    }
+
+    // Enhanced search handling
+    function handleSearch() {
+        const searchTerm = document.getElementById('search-input').value;
+        const status = document.getElementById('status-filter').value;
+        fetchBooks(searchTerm);
+        fetchMembers(searchTerm);
+        fetchLoans(searchTerm, status);
+        fetchHistory(searchTerm);
+    }
+
+    function clearSearch() {
+        document.getElementById('search-input').value = '';
+        document.getElementById('status-filter').value = '';
+        fetchBooks();
+        fetchMembers();
+        fetchLoans();
+        fetchHistory();
+    }
+</script>
+{% endblock %}
