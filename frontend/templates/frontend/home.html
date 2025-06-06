@@ -459,14 +459,14 @@
     }
 
     // Fetch and display active loans
-    async function fetchLoans(search = '', status = '') {
+    async function fetchLoans(search = '', status = 'LOANED') {
         try {
             ui.showLoading('loans-list');
             let url = '/api/loans/';
             const params = [];
             
             if (search) params.push(`search=${search}`);
-            if (status) params.push(`status=${status}`);
+            params.push(`status=${status}`);
             if (params.length > 0) url += '?' + params.join('&');
             
             const data = await api.get(url);
