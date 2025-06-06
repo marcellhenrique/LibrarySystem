@@ -209,7 +209,7 @@ class UserViewSetTestCase(APITestCase):
             'login': 'testuser',
             'email': 'test@example.com',
             'name': 'Updated Test User',
-            'role': 'Senior Librarian',
+            'role': 'Librarian',
             'is_staff_member': True
         }
         
@@ -237,6 +237,99 @@ class UserViewSetTestCase(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(User.objects.filter(pk=user_to_delete.pk).exists())
+
+    def test_register_user_success(self):
+        """Test successful user registration"""
+        url = reverse('user-register')
+        data = {
+            'login': 'newuser',
+            'email': 'newuser@example.com',
+            'name': 'New User',
+            'role': 'Assistant',
+            'password': 'StrongPass123!'
+        }
+        
+        response = self.client.post(url, data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['login'], 'newuser')
+        self.assertEqual(response.data['email'], 'newuser@example.com')
+        self.assertEqual(response.data['role'], 'Assistant')
+        self.assertNotIn('password', response.data)  # Password should not be in response
+        
+        # Verify user was created
+        user = User.objects.get(login='newuser')
+        self.assertTrue(user.check_password('StrongPass123!'))
+        self.assertTrue(user.is_active)
+        self.assertFalse(user.is_staff_member)  # Default value
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
+
+    def test_register_user_duplicate_login(self):
+        """Test registration with duplicate login"""
+        url = reverse('user-register')
+        data = {
+            'login': 'testuser',  # Same as existing user
+            'email': 'different@example.com',
+            'name': 'Different Name',
+            'role': 'Assistant',
+            'password': 'StrongPass123!'
+        }
+        
+        response = self.client.post(url, data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('login', response.data)
+
+    def test_register_user_duplicate_email(self):
+        """Test registration with duplicate email"""
+        url = reverse('user-register')
+        data = {
+            'login': 'different',
+            'email': 'test@example.com',  # Same as existing user
+            'name': 'Different Name',
+            'role': 'Assistant',
+            'password': 'StrongPass123!'
+        }
+        
+        response = self.client.post(url, data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)
+
+    def test_register_user_invalid_password(self):
+        """Test registration with invalid password"""
+        url = reverse('user-register')
+        data = {
+            'login': 'newuser',
+            'email': 'newuser@example.com',
+            'name': 'New User',
+            'role': 'Assistant',
+            'password': '123'  # Too short
+        }
+        
+        response = self.client.post(url, data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', response.data)
+
+    def test_register_user_with_staff_member(self):
+        """Test that registration cannot set is_staff_member"""
+        url = reverse('user-register')
+        data = {
+            'login': 'newuser',
+            'email': 'newuser@example.com',
+            'name': 'New User',
+            'role': 'Assistant',
+            'password': 'StrongPass123!',
+            'is_staff_member': True  # Should be ignored
+        }
+        
+        response = self.client.post(url, data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(login='newuser')
+        self.assertFalse(user.is_staff_member)  # Should still be False
 
 
 class MemberViewSetTestCase(APITestCase):

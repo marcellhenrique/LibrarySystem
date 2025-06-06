@@ -15,11 +15,24 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Configure permissions based on action"""
-        if self.action == 'login':
+        if self.action in ['login', 'register']:
             permission_classes = [AllowAny]
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
+
+    @action(detail=False, methods=['post'])
+    def register(self, request):
+        """Register a new user"""
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            # Ensure default values
+            serializer.validated_data['is_staff_member'] = False
+            serializer.validated_data['is_staff'] = False
+            serializer.validated_data['is_superuser'] = False
+            user = serializer.save()
+            return Response(self.get_serializer(user).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def login(self, request):

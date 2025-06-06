@@ -5,16 +5,37 @@ from .models import User, Member
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model (staff members)"""
-    password = serializers.CharField(write_only=True, min_length=6, required=False)
-
+    password = serializers.CharField(write_only=True, min_length=8, required=False)
+    
     class Meta:
         model = User
         fields = ('id', 'login', 'email', 'name', 'role', 'password', 
                  'is_staff_member', 'is_active', 'date_joined')
-        read_only_fields = ('id', 'is_active', 'date_joined')
+        read_only_fields = ('id', 'is_active', 'date_joined', 'is_staff_member')
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True},
+            'name': {'required': False},  
+            'role': {'required': False},  
+            'login': {'required': False}, 
+            'email': {'required': False}  
         }
+
+    def validate(self, data):
+        """Validate data based on context"""
+        request = self.context.get('request')
+        view = self.context.get('view')
+        action = view.action if view else None
+
+        if request and request.method == 'POST' and action == 'register':
+            required_fields = ['login', 'email', 'name', 'role', 'password']
+            errors = {}
+            for field in required_fields:
+                if field not in data:
+                    errors[field] = 'This field is required for registration.'
+            if errors:
+                raise serializers.ValidationError(errors)
+        
+        return data
 
     def create(self, validated_data):
         """Create a new user with encrypted password"""
@@ -26,10 +47,16 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Update user, handling password separately"""
-        password = validated_data.pop('password', None)
-        if password:
+        # Only update fields that are provided
+        if 'password' in validated_data:
+            password = validated_data.pop('password')
             instance.set_password(password)
-        return super().update(instance, validated_data)
+        
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        return instance
 
 
 class LoginSerializer(serializers.Serializer):
